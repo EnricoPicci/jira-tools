@@ -1,5 +1,5 @@
 import axios from "axios"
-import { EMPTY, expand, from, last, map } from "rxjs"
+import { EMPTY, concatMap, expand, from, map, } from "rxjs"
 import { newIssueCompact } from "./issues.model"
 
 
@@ -35,7 +35,7 @@ export function fetchProjectIssues$(
         fields
     }
 
-    const postFactory$ = (postBody: any, issues: any[] = []) => {
+    const postFactory$ = (postBody: any, numIssuesRead = 0) => {
         return from(axios.post(`https://${jiraUrl}/rest/api/2/search`, postBody, {
             auth: { username, password },
             headers: {
@@ -44,17 +44,17 @@ export function fetchProjectIssues$(
         })).pipe(
             map(resp => {
                 const issuesPaged = resp.data.issues
-                issues.push(...issuesPaged)
+                numIssuesRead += resp.data.issues.length
                 const total = resp.data.total
-                console.log(`>>>>> read ${issues.length} of ${total} total issues`)
+                console.log(`>>>>> read ${numIssuesRead} of ${total} total issues`)
                 const startAt = resp.data.startAt + resp.data.maxResults
-                return { issues, startAt, total }
+                return { issuesPaged, startAt, total, numIssuesRead }
             }),
         )
     }
 
     return postFactory$(postBody).pipe(
-        expand(({ issues, startAt, total }) => {
+        expand(({ startAt, total, numIssuesRead }) => {
             if (startAt >= total) {
                 console.log(`>>>>> Reading of issues completed`)
                 return EMPTY
@@ -62,12 +62,14 @@ export function fetchProjectIssues$(
             const _postBody = { ...postBody }
             _postBody.startAt = startAt
 
-            return postFactory$(_postBody, issues)
+            return postFactory$(_postBody, numIssuesRead)
         }),
-        last(),
-        map(({ issues }) => issues.map(issue => {
+        concatMap(({ issuesPaged }) => {
+            return issuesPaged
+        }),
+        map((issue) => {
             return newIssueCompact(issue, customFieldNames)
-        })),
+        }),
     )
 }
 
