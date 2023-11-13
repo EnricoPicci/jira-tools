@@ -20,13 +20,6 @@ export interface IssueCompactWithCustomFields extends IssueCompact {
 }
 
 export function newIssueCompact(jiraIssue: any, customFieldNames: { [customfield: string]: string }) {
-    // _customrFields is an object whose keys are the customfield names and whose values are the customfield values
-    // example:
-    // if we have customfield_21500 = 'layer' and customfield_21500 = 'subsidiaries' then the _customFields will be:
-    // {
-    //     layer: 'layer value',
-    //     subsidiaries: 'subsidiaries value'
-    // }
     const customFields = Object.entries(customFieldNames)
         .reduce((acc, [customfield_name, real_name]) => {
             const field = jiraIssue.fields[customfield_name]
@@ -58,6 +51,36 @@ export function newIssueCompact(jiraIssue: any, customFieldNames: { [customfield
         priority: jiraIssue.fields.priority ? jiraIssue.fields.priority.name : '-',
         customFields
     }
+    return issue
+}
+
+export function toCustomJiraIssue(jiraIssue: IssueCompactWithCustomFields, costumFieldNames: { [customfield: string]: string }) {
+    const issue: any = {
+        id: jiraIssue.id,
+        key: jiraIssue.key,
+        // remove description from csv since it is too long and has newlines chars and commas
+        description: '',
+        status: jiraIssue.status,
+        assignee: jiraIssue.assignee,
+        issuetype: jiraIssue.issuetype,
+        project: jiraIssue.project,
+        created: jiraIssue.created,
+        updated: jiraIssue.updated,
+        creator: jiraIssue.creator,
+        reporter: jiraIssue.reporter,
+        priority: jiraIssue.priority,
+        // customFields
+        layer: jiraIssue.customFields.layer.value,
+        subsidiaries: jiraIssue.customFields.subsidiaries.value,
+        convergence: jiraIssue.customFields.convergence.value,
+        phase: jiraIssue.customFields.phase.value,
+        wave: jiraIssue.customFields.wave.value,
+        line_of_business: jiraIssue.customFields.line_of_business.value,
+    }
+    // retrieve each custom field value from the customFields object
+    Object.entries(costumFieldNames).forEach(([_, realFieldName]) => {
+        issue[realFieldName] = jiraIssue.customFields[realFieldName].value
+    })
     return issue
 }
 
