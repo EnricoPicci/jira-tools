@@ -72,13 +72,6 @@ export function toCustomJiraIssue(jiraIssue: IssueCompactWithCustomFields, costu
         reporter: jiraIssue.reporter,
         priority: jiraIssue.priority,
         labels: jiraIssue.labels,
-        // customFields
-        layer: jiraIssue.customFields.layer.value,
-        subsidiaries: jiraIssue.customFields.subsidiaries.value,
-        convergence: jiraIssue.customFields.convergence.value,
-        phase: jiraIssue.customFields.phase.value,
-        wave: jiraIssue.customFields.wave.value,
-        line_of_business: jiraIssue.customFields.line_of_business.value,
     }
     // retrieve each custom field value from the customFields object
     Object.entries(costumFieldNames).forEach(([_, realFieldName]) => {

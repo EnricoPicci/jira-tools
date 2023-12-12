@@ -1,23 +1,18 @@
 # jira-tools
 
-jira-tools is a node app configured to use Typescript scaffolded using the package `@enrico.piccinin/create-node-ts-app`.
+jira-tools is both a library that provides APIs to work with Jira servers (see [index.ts](./src/index.ts) for the list of APIs offered) and a set of node apps that allows to work with Jira from the command line.
 
-jira-tools can be published as a package on the public NPM registry.
+The apps can be launched with the command
 
-Contains a configuration for `eslint` and `prettier`.
+`npx jira-tools <app-name> <params>`
 
-Testing is based on the `mocha` and `chai` libraries.
+or, if we have cloned jira-tools repo, from the jira-tools repo folder launching the command
 
-In the `src` folder there is a `package-core.ts` file containing a sample of a function which is exported by the package via the `index.ts` file.
+`node ./dist/lib/command.js <app-name> <params>`
 
-## test
+Executing `npx jira-tools` prints on the console the list of available apps.
 
-Run the tests using the command
+Executing `npx jira-tools <app-name> -h` prints on the console the help for the specific app.
 
-`npm run test`
-
-## Publish on NPM registry
-
-To publish on NPM registry the package rune the command
-
-`npm publish`
+## commands
+- [**write-issues**](./src/apps/write-issues/launch-write-issues.ts): fetches the Jira issues related to the project ids provided and writes them in a csv file
