@@ -113,7 +113,9 @@ export function fetchProjectIssues$(
         map((issue) => {
             return newIssueCompact(issue, customFieldNames)
         }),
-        map(jiraIssue => toCustomJiraIssue(jiraIssue, customFieldNames)),
+        map(jiraIssue => {
+            return toCustomJiraIssue(jiraIssue, customFieldNames)
+        }),
     )
 }
 
@@ -142,6 +144,20 @@ export function fetchMultiProjectIssues$(
     )
 }
 
+/**
+ * This function fetches issues from multiple Jira projects and writes them to a CSV file.
+ * It first calls the `fetchMultiProjectIssues$` function to fetch the issues, then it calls the `writeCustomIssuesToCsv$` function 
+ * to write the issues to a CSV file.
+ *
+ * @param {string} jiraUrl - The URL of the Jira instance.
+ * @param {string} username - The username for authenticating with the Jira instance.
+ * @param {string} password - The password for authenticating with the Jira instance.
+ * @param {string[]} projectIds - An array of the IDs of the Jira projects from which to fetch issues.
+ * @param {Object} customFieldNames - An object mapping custom field IDs to their names.
+ * @param {string} outdir - The directory where the CSV file will be written.
+ *
+ * @returns {Observable} An Observable that completes when the CSV file has been written.
+ */
 export function writeMultiProjectIssues$(
     jiraUrl: string,
     username: string,

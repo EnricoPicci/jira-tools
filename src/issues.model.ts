@@ -14,6 +14,7 @@ export interface IssueCompact {
     creator: string;
     reporter: string;
     priority: string;
+    labels: string[];
 }
 export interface IssueCompactWithCustomFields extends IssueCompact {
     customFields: { [name: string]: CustomField };
@@ -26,7 +27,7 @@ export function newIssueCompact(jiraIssue: any, customFieldNames: { [customfield
             const customFieldValue = field ? {
                 id: field.id,
                 name: customfield_name,
-                value: field.value
+                value: Array.isArray(field) ? field.map(f => f.value).join(' - ') : field.value
             } : {
                 id: '',
                 name: customfield_name,
@@ -49,6 +50,7 @@ export function newIssueCompact(jiraIssue: any, customFieldNames: { [customfield
         creator: jiraIssue.fields.creator ? jiraIssue.fields.creator.name : '-',
         reporter: jiraIssue.fields.reporter ? jiraIssue.fields.reporter.name : '-',
         priority: jiraIssue.fields.priority ? jiraIssue.fields.priority.name : '-',
+        labels: jiraIssue.fields.labels ?? [],
         customFields
     }
     return issue
@@ -69,6 +71,7 @@ export function toCustomJiraIssue(jiraIssue: IssueCompactWithCustomFields, costu
         creator: jiraIssue.creator,
         reporter: jiraIssue.reporter,
         priority: jiraIssue.priority,
+        labels: jiraIssue.labels,
         // customFields
         layer: jiraIssue.customFields.layer.value,
         subsidiaries: jiraIssue.customFields.subsidiaries.value,

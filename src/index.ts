@@ -1,3 +1,7 @@
-import { functionFromPackage } from './package-core';
+import { fetchMultiProjectIssues$, fetchProjectIssues$, writeMultiProjectIssues$ } from './issues';
 
-export { functionFromPackage };
+export {
+    fetchProjectIssues$,
+    fetchMultiProjectIssues$,
+    writeMultiProjectIssues$
+};
