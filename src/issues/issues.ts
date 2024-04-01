@@ -119,6 +119,95 @@ export function fetchProjectIssues$(
     )
 }
 
+export function fetchProjectStories$(
+    jiraUrl: string,
+    username: string,
+    password: string,
+    projectId: string,
+    customFieldNames: { [customfield: string]: string },
+    options = new FetchProjectIssuesOptions(),
+) {
+    // define the basic fields to fetch for each issue and then combine them with the custom field names
+    const basicFields = [
+        "summary",
+        "description",
+        "created",
+        "updated",
+        "creator",
+        "reporter",
+        "priority",
+        "labels",
+        "status",
+        "assignee",
+        "issuetype",
+        "project",
+    ]
+    const fields = [...basicFields, ...Object.keys(customFieldNames)]
+
+    // define the body to be sent in the POST request
+    const postBody = {
+        "jql": `project=${projectId} AND type=Story`,
+        startAt: options.startAt,
+        maxResults: options.maxResults,
+        fields
+    }
+
+    // postFactory$ is an function, internal to fetchProjectIssues$, that makes a POST request to the Jira REST API's search endpoint
+    // passing the postBody and the authentication details. The response from this request is an Observable that is transformed to
+    // extract the issues and some metadata from the response.
+    // In particular the data notified contain the updated value of startAt, so that the next request will start from the correct point.
+    const postFactory$ = (postBody: any) => {
+        return from(axios.post(`https://${jiraUrl}/rest/api/2/search`, postBody, {
+            auth: { username, password },
+            headers: {
+                "Content-Type": "application/json",
+            }
+        })).pipe(
+            map(resp => {
+                const issuesPaged = resp.data.issues
+                const startAt = resp.data.startAt + issuesPaged.length
+                const total = resp.data.total
+                console.log(`>>>>> read ${startAt} of ${total} total issues for project ${projectId}`)
+                return { issuesPaged, startAt, total }
+            }),
+        )
+    }
+
+    // call postFactory$ with the initial postBody, and use the expand operator to recursively fetch all pages of issues
+    return postFactory$(postBody).pipe(
+        // use expand to recursively fetch all pages of issues until the startAt is greater than or equal to the total number of issues
+        expand(({ startAt, total }) => {
+            if (startAt >= total) {
+                console.log(`>>>>> Reading of issues completed for project ${projectId}`)
+                return EMPTY
+            }
+            const _postBody = { ...postBody }
+            _postBody.startAt = startAt
+
+            // recursivly call postFactory$ to fetch the next page of issues
+            return postFactory$(_postBody)
+        }),
+        catchError((err) => {
+            if (err.response && err.response.status === 400) {
+                const errorMessages = err.response?.data?.errorMessages
+                const msg = errorMessages ? errorMessages.join('\n') : 'Status 400 received from Jira server for project ${projectId}'
+                console.warn(msg)
+                return EMPTY
+            }
+            throw err
+        }),
+        concatMap(({ issuesPaged }) => {
+            return issuesPaged
+        }),
+        map((issue) => {
+            return newIssueCompact(issue, customFieldNames)
+        }),
+        map(jiraIssue => {
+            return toCustomJiraIssue(jiraIssue, customFieldNames, false)
+        })
+    )
+}
+
 /**
  * This function fetches issues from multiple Jira projects using the Jira REST API and returns an Observable stream of the issues.
  * It receives a list of project IDs and for each project ID, it calls the `fetchProjectIssues$` function.

@@ -1,7 +1,7 @@
 {
   "name": "@enrico.piccinin/jira-tools",
   "version": "1.0.0",
-  "description": "",
+  "description": "Some tools to interact with Jira",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
@@ -32,6 +32,7 @@
     "axios": "^1.6.1",
     "commander": "^11.1.0",
     "observable-fs": "^2.2.8",
+    "remove-markdown": "^0.5.0",
     "rxjs": "^7.8.1"
   }
 }
