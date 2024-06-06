@@ -1,5 +1,3 @@
-const removeMd = require('remove-markdown');
-
 export interface IssueCompact {
     id: number;
     key: string;
@@ -59,11 +57,12 @@ export function newIssueCompact(jiraIssue: any, customFieldNames: { [customfield
 export function toCustomJiraIssue(
     jiraIssue: IssueCompactWithCustomFields,
     costumFieldNames: { [customfield: string]: string },
-    removeDescription = true
 ) {
     const issue: any = {
         id: jiraIssue.id,
         key: jiraIssue.key,
+        // remove description from csv since it is too long and has newlines chars and commas
+        description: '',
         status: jiraIssue.status,
         assignee: jiraIssue.assignee,
         issuetype: jiraIssue.issuetype,
@@ -74,11 +73,6 @@ export function toCustomJiraIssue(
         reporter: jiraIssue.reporter,
         priority: jiraIssue.priority,
         labels: jiraIssue.labels,
-    }
-    // maybe remove description since it is too long and has newlines chars and commas
-    if (!removeDescription) {
-        const descStripped = removeMd(jiraIssue.description)
-        issue.description = descStripped
     }
     // retrieve each custom field value from the customFields object
     Object.entries(costumFieldNames).forEach(([_, realFieldName]) => {

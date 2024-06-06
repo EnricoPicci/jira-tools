@@ -1,5 +1,6 @@
 import axios from "axios"
 import { EMPTY, Observable, catchError, concatMap, defaultIfEmpty, expand, from, ignoreElements, map, of, } from "rxjs"
+const removeMd = require('remove-markdown');
 import { newIssueCompact, toCustomJiraIssue } from "./issues.model"
 import { appendFileObs, deleteFileObs } from "observable-fs"
 import { toCsvObs } from "@enrico.piccinin/csv-tools"
@@ -203,10 +204,36 @@ export function fetchProjectStories$(
             return newIssueCompact(issue, customFieldNames)
         }),
         map(jiraIssue => {
-            return toCustomJiraIssue(jiraIssue, customFieldNames, false)
+            const jIssue = toCustomJiraIssue(jiraIssue, customFieldNames)
+            const descStripped = removeMd(jiraIssue.description)
+            jIssue.description = descStripped
         })
     )
 }
+
+export function getIssue$(jiraUrl: string, username: string, password: string, issueIdOrKey: string) {
+    return from(axios.get(`https://${jiraUrl}/rest/api/2/issue/${issueIdOrKey}`, {
+        auth: { username, password },
+        headers: {
+            "Content-Type": "application/json",
+            'Accept': 'application/json'
+        }
+    })).pipe(
+        map(resp => resp.data),
+        catchError((err) => {
+            if (err.response && err.response.status === 404) {
+                console.warn(`Issue ${issueIdOrKey} not found`)
+                return of(IssueNotFound)
+            }
+            throw err
+        })
+    )
+}
+export interface JiraError {
+    errorMessages: string[]
+    code: string
+}
+export const IssueNotFound: JiraError = { errorMessages: ['Issue not found'], code: 'IssueNotFound' }
 
 /**
  * This function fetches issues from multiple Jira projects using the Jira REST API and returns an Observable stream of the issues.
